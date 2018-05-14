@@ -1,7 +1,6 @@
 package bithacking
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
@@ -21,43 +20,10 @@ func TestNewTimestamp(t *testing.T) {
 	for _, test := range tables {
 		actual := newTimestamp(test.input)
 		cmp := uint32(actual)
-		// fmt.Printf("%032b\n", cmp)
 
 		if cmp != test.expected {
 			t.Errorf("%d != %d\n", cmp, test.expected)
 		}
-	}
-}
-
-func TestDecodeTimestamp(t *testing.T) {
-	tables := []struct {
-		input    string
-		expected []uint32
-	}{
-		{"00000000000010000100000000000001", []uint32{0, 1, 1, 0, 0, 1}},
-		{"00111011001010110001111110101110", []uint32{118, 5, 12, 15, 53, 6}},
-	}
-
-	for _, test := range tables {
-		actual := decodeTimestamp(test.input)
-
-		for i, v := range actual {
-			if v != test.expected[i] {
-				t.Errorf("%d != %d\n", v, test.expected[i])
-			}
-		}
-	}
-}
-
-func TestExtractMid(t *testing.T) {
-	var actual uint32
-	var cmp string
-
-	actual = extractMid(0xdeadbeef, 4, 16)
-	cmp = fmt.Sprintf("%x", actual)
-
-	if cmp != "bee" {
-		t.Errorf("%v != %v\n", cmp, "bee")
 	}
 }
 
@@ -71,12 +37,54 @@ func TestBinStrToNum(t *testing.T) {
 	}
 
 	for _, test := range tables {
-		actual, err := binStrToNum(test.input)
+		actual, err := BinStrToNum(test.input)
 
 		if err != nil {
 			t.Errorf("%v\n", err)
 		} else if actual != test.expected {
 			t.Errorf("\nactual:  %32d\nexpected %32d\n", actual, test.expected)
+		}
+	}
+
+	errTriggers := []struct {
+		input  string
+		reason string
+	}{
+		{
+			"000000000000010000100000000000001",
+			"input too long",
+		},
+		{
+			"00000000000001000010000000000002",
+			"input correct length but contains illegal characters",
+		},
+	}
+
+	for _, test := range errTriggers {
+		_, err := BinStrToNum(test.input)
+
+		if err == nil {
+			t.Errorf("expected an error but didn't get one. %s\n", test.reason)
+		}
+	}
+}
+
+func TestDecodeTimestamp(t *testing.T) {
+	tables := []struct {
+		input    string
+		expected []uint8
+	}{
+		{"00000000000010000100000000000001", []uint8{0, 1, 1, 0, 0, 1}},
+		{"00111011001010110001111110101110", []uint8{118, 5, 12, 15, 53, 6}},
+	}
+
+	for _, test := range tables {
+		actual := DecodeTimestamp(test.input)
+
+		for i, v := range actual {
+			if v != test.expected[i] {
+				t.Errorf("%d != %d\n", v, test.expected[i])
+			}
 		}
 	}
 }
