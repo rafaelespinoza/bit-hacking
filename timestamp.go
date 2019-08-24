@@ -1,7 +1,6 @@
 package bithacking
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -17,9 +16,9 @@ type Timestamp uint32
 // min, 	0-59,	6 bits, (23, 28)
 // weekday,	0-6, 	3 bits, (29, 31)
 
-// distance (in bits) from right-most bit of a time unit to left-most bit of the
-// entire 32-bit timestamp
-var bitOffsets = [6]uint8{
+// timestampOffsets is the distance (in bits) from right-most bit of a time unit
+// to left-most bit of the entire 32-bit timestamp.
+var timestampOffsets = [6]uint8{
 	8,  // year
 	12, // month
 	17, // day of month
@@ -32,35 +31,35 @@ func newTimestamp(t time.Time) Timestamp {
 	r := uint32(0)
 
 	n := t.Year() - 1900
-	r |= uint32(n) << (31 - bitOffsets[0])
+	r |= uint32(n) << (31 - timestampOffsets[0])
 
 	n = int(t.Month())
-	r |= uint32(n) << (31 - bitOffsets[1])
+	r |= uint32(n) << (31 - timestampOffsets[1])
 
 	n = t.Day()
-	r |= uint32(n) << (31 - bitOffsets[2])
+	r |= uint32(n) << (31 - timestampOffsets[2])
 
 	n = t.Hour()
-	r |= uint32(n) << (31 - bitOffsets[3])
+	r |= uint32(n) << (31 - timestampOffsets[3])
 
 	n = t.Minute()
-	r |= uint32(n) << (31 - bitOffsets[4])
+	r |= uint32(n) << (31 - timestampOffsets[4])
 
 	n = int(t.Weekday())
-	r |= uint32(n) << (31 - bitOffsets[5])
+	r |= uint32(n) << (31 - timestampOffsets[5])
 
 	return Timestamp(r)
 }
 
-func BinStrToNum(b string) (uint32, error) {
+func BinStrToNum(b string) (num uint32, err error) {
 	if len(b) != 32 {
-		m := fmt.Sprintf("Input must be length of 32. Length is %d", len(b))
-		e := errors.New(m)
-		return uint32(0), e
+		err = fmt.Errorf("input must have length 32, length is %d", len(b))
+		return
 	}
 
-	i, e := strconv.ParseUint(b, 2, 32)
-	return uint32(i), e
+	i, err := strconv.ParseUint(b, 2, 32)
+	num = uint32(i)
+	return
 }
 
 func DecodeTimestamp(s string) []uint8 {
@@ -69,7 +68,7 @@ func DecodeTimestamp(s string) []uint8 {
 
 	n := uint32(31)
 
-	for i, offset := range bitOffsets {
+	for i, offset := range timestampOffsets {
 		var offsetEnd, mask, bit, timeVal uint32
 		offsetEnd = 31 - uint32(offset)
 
